@@ -7,6 +7,8 @@
 #define trigPin 4
 
 const int Max_DISTANCE = 100; //maximum distance(height of the bin) in cm
+const int MAX_RETRIES = 5; // specifying maximum number of retries for HTTP requests
+const int RETRY_DELAY = 5000; //time between next retry in milliseconds
 
 long duration, distance;
 int fillLevel;
@@ -30,14 +32,23 @@ void setup() {
 }
 
 void loop() {
+  // Triger ultrasonic sensor
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
 
+// read the echo pin
   duration = pulseIn(echoPin, HIGH);
   distance = duration * 0.034 / 2;
+
+  //handling error sensor readings
+  if (distance <= 0 || distance > Max_DISTANCE){
+    Serial.println("Error: Invalid sensor reading");
+    delay(10000); // wait 10 seconds before retrying
+    return;
+  }
 
   Serial.print("Distance: ");
   Serial.print(distance);
@@ -50,7 +61,7 @@ void loop() {
   Serial.print("Fill Level: ");
   Serial.print(fillLevel);
   Serial.println("%");
-
+ // send data to thingspeak if data is connected
   if (WiFi.status() == WL_CONNECTED){
     HTTPClient http;
     String url = String(SERVER) + "?api_key=" + WRITE_APIKEY +  "$field1=" + String(fillLevel);

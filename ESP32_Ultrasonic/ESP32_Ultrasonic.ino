@@ -61,26 +61,41 @@ void loop() {
   Serial.print("Fill Level: ");
   Serial.print(fillLevel);
   Serial.println("%");
+
  // send data to thingspeak if data is connected
   if (WiFi.status() == WL_CONNECTED){
     HTTPClient http;
     String url = String(SERVER) + "?api_key=" + WRITE_APIKEY +  "$field1=" + String(fillLevel);
-    http.begin(url);
+
+    int retries = 0;
+    int httpResponseCode = -1;
+    while(retries < MAX_RETRIES){
+      http.begin(url);
     int httpResponseCode = http.GET();
     if (httpResponseCode > 0){
       Serial.print("HTTP Response code: ");
       Serial.println(httpResponseCode);
 
-    }else{
+      break;
+    }
+    else{
       Serial.print("Error code: ");
       Serial.println(httpResponseCode);
+      retries++;
+      Serial.print("Retrying....(");
+      Serial.print(retries);
+      Serial.println(")");
+      delay(RETRY_DELAY); // wait before retrying
 
     }
     http.end();
-  }else{
+  }
+  if (httpResponseCode <= 0){
+    Serial.println("failed to send data after retries");
+  } else{
     Serial.println("Wifi Disconnected");
   
   }
   delay(15000); // send data every 15 seconds 
-
+  }
 }

@@ -6,7 +6,7 @@
 #define echoPin 5
 #define trigPin 18
 
-const int Max_DISTANCE = 100; // Maximum distance (height of the bin) in cm
+const int Max_DISTANCE = 20; // Maximum distance (height of the bin) in cm
 const int Max_RETRIES = 3; // Maximum number of retries for HTTP requests
 const int RETRY_DELAY = 5000; // Delay between retries in milliseconds
 
@@ -43,7 +43,7 @@ void loop() {
   distance = duration * 0.034 / 2;
 
   // Error handling for sensor reading
-  if (distance <= 0 || distance > Max_DISTANCE) {
+  if (distance <= 0) {
     Serial.println("Error: Invalid distance reading");
     delay(15000); // Wait before retrying
     return;
@@ -54,7 +54,12 @@ void loop() {
   Serial.println(" cm");
 
   // Calculate fill level as a percentage
-  fillLevel = 100 - ((distance * 100) / Max_DISTANCE);
+  if (distance >= Max_DISTANCE) {
+    fillLevel = 100;
+  } else {
+    fillLevel = ((Max_DISTANCE - distance) * 100) / Max_DISTANCE;
+  }
+
   if (fillLevel < 0) fillLevel = 0;
   if (fillLevel > 100) fillLevel = 100;
 
